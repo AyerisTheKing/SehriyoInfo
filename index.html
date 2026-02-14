@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Школа Сехрие - Добро пожаловать</title>
+    <meta name="description" content="Официальный сайт школы Сехрие для учеников, родителей и гостей">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header with School Logo -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="logo">
+                <span class="logo-text">Sehriyo</span>
+                <span class="logo-info">Info</span>
+            </div>
+            <button class="menu-toggle" aria-label="Меню">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar Navigation Menu -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+        <nav class="sidebar-content">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">Навигация</h2>
+                <button class="sidebar-close" id="sidebar-close" aria-label="Закрыть меню">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="sidebar-nav-item">
+                    <a href="#students" class="sidebar-nav-link">
+                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        <span>Ученики</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="#teachers" class="sidebar-nav-link">
+                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        <span>Учителя</span>
+                    </a>
+                </li>
+                <li class="sidebar-nav-item">
+                    <a href="#administration" class="sidebar-nav-link">
+                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="9" y1="9" x2="15" y2="9"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        <span>Администрация</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Welcome Section -->
+        <section class="welcome-section">
+            <div class="welcome-container">
+                <h1 class="welcome-title">Добро пожаловать</h1>
+                <p class="welcome-subtitle">в информационный портал школы Сехрие</p>
+                <div class="welcome-decoration"></div>
+            </div>
+        </section>
+
+        <!-- News Feed Section -->
+        <section class="news-section">
+            <div class="news-header">
+                <h2 class="news-title">Новости</h2>
+                <p class="news-subtitle">Последние события школы Сехрие</p>
+            </div>
+
+            <div class="news-feed">
+                <!-- News Article 1 -->
+                <article class="news-article">
+                    <div class="news-date">
+                        <span class="news-day">14</span>
+                        <span class="news-month">Фев</span>
+                    </div>
+                    <div class="news-content">
+                        <h3 class="news-article-title">Открытие нового компьютерного класса</h3>
+                        <p class="news-article-excerpt">
+                            Рады сообщить, что в нашей школе открылся современный компьютерный класс, 
+                            оснащенный новейшим оборудованием для изучения программирования и информатики.
+                        </p>
+                        <a href="#news1" class="news-read-more">Читать полностью →</a>
+                    </div>
+                </article>
+
+                <!-- News Article 2 -->
+                <article class="news-article">
+                    <div class="news-date">
+                        <span class="news-day">10</span>
+                        <span class="news-month">Фев</span>
+                    </div>
+                    <div class="news-content">
+                        <h3 class="news-article-title">Победа в городской олимпиаде по математике</h3>
+                        <p class="news-article-excerpt">
+                            Наши ученики заняли призовые места на городской олимпиаде по математике. 
+                            Поздравляем победителей и желаем дальнейших успехов!
+                        </p>
+                        <a href="#news2" class="news-read-more">Читать полностью →</a>
+                    </div>
+                </article>
+
+                <!-- News Article 3 -->
+                <article class="news-article">
+                    <div class="news-date">
+                        <span class="news-day">05</span>
+                        <span class="news-month">Фев</span>
+                    </div>
+                    <div class="news-content">
+                        <h3 class="news-article-title">Новое расписание кружков и секций</h3>
+                        <p class="news-article-excerpt">
+                            Опубликовано обновленное расписание дополнительных занятий. 
+                            Записаться можно у классного руководителя или в администрации школы.
+                        </p>
+                        <a href="#news3" class="news-read-more">Читать полностью →</a>
+                    </div>
+                </article>
+
+                <!-- News Article 4 -->
+                <article class="news-article">
+                    <div class="news-date">
+                        <span class="news-day">01</span>
+                        <span class="news-month">Фев</span>
+                    </div>
+                    <div class="news-content">
+                        <h3 class="news-article-title">День открытых дверей для будущих первоклассников</h3>
+                        <p class="news-article-excerpt">
+                            15 февраля приглашаем родителей будущих первоклассников познакомиться со школой, 
+                            учителями и условиями обучения.
+                        </p>
+                        <a href="#news4" class="news-read-more">Читать полностью →</a>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p>&copy; 2026 Школа Сехрие. Все права защищены.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
