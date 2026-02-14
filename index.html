@@ -75,6 +75,292 @@
         </nav>
     </aside>
 
+    <!-- Students Level Selection Modal -->
+    <div class="modal" id="students-modal">
+        <div class="modal-overlay" id="students-modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Ученики</h2>
+                <button class="modal-close" id="students-modal-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <p class="modal-description">Выберите уровень школы:</p>
+                
+                <div class="school-levels">
+                    <button class="school-level-btn" data-level="elementary">
+                        <div class="level-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+                        <h3 class="level-title">Начальная школа</h3>
+                        <p class="level-description">1-4 классы</p>
+                    </button>
+                    
+                    <button class="school-level-btn" data-level="middle">
+                        <div class="level-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="level-title">Средняя школа</h3>
+                        <p class="level-description">5-9 классы</p>
+                    </button>
+                    
+                    <button class="school-level-btn" data-level="high">
+                        <div class="level-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                                <path d="M6 12v5c0 1 2 2 6 2s6-1 6-2v-5"></path>
+                            </svg>
+                        </div>
+                        <h3 class="level-title">Старшая школа</h3>
+                        <p class="level-description">10-11 классы</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Class Selection Modal (Full Screen) -->
+    <div class="modal modal-fullscreen" id="class-selection-modal">
+        <div class="modal-overlay" id="class-selection-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="class-selection-title">Выберите класс</h2>
+                <button class="modal-close" id="class-selection-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body modal-scroll">
+                <div class="grades-accordion" id="grades-accordion"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Class Details Modal (Full Screen) -->
+    <div class="modal modal-fullscreen" id="class-details-modal">
+        <div class="modal-overlay" id="class-details-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="class-details-title">Класс</h2>
+                <button class="modal-close" id="class-details-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body modal-scroll">
+                <div class="class-details" id="class-details-content">
+                    <div class="detail-section">
+                        <h3 class="detail-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Классный руководитель
+                        </h3>
+                        <div class="teacher-card">
+                            <div class="teacher-avatar">👨‍🏫</div>
+                            <div class="teacher-info">
+                                <h4 class="teacher-name" id="teacher-name">Загрузка...</h4>
+                                <p class="teacher-contact" id="teacher-contact">📧 email | 📞 телефон</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3 class="detail-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Информация о классе
+                        </h3>
+                        <div class="class-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">👥</div>
+                                <div class="stat-value" id="students-count">0</div>
+                                <div class="stat-label">Учеников</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🚪</div>
+                                <div class="stat-value" id="classroom-number">—</div>
+                                <div class="stat-label">Кабинет</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">👤</div>
+                                <div class="stat-value" id="class-monitor">—</div>
+                                <div class="stat-label">Староста</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h3 class="detail-section-title">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Список учеников
+                        </h3>
+                        <div class="students-list" id="students-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Profile Modal -->
+    <div class="modal modal-fullscreen" id="student-profile-modal">
+        <div class="modal-overlay" id="student-profile-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <button class="back-button" id="student-profile-back" aria-label="Назад">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Назад
+                </button>
+                <h2 class="modal-title" id="student-profile-title">Профиль ученика</h2>
+                <button class="modal-close" id="student-profile-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body modal-scroll">
+                <div class="profile-container">
+                    <div class="profile-photo-section">
+                        <div class="profile-photo" id="student-photo">👤</div>
+                        <h3 class="profile-name" id="student-fullname">Загрузка...</h3>
+                    </div>
+                    
+                    <div class="profile-info-grid">
+                        <div class="profile-info-card">
+                            <div class="info-icon">🎓</div>
+                            <div class="info-content">
+                                <div class="info-label">Класс</div>
+                                <div class="info-value" id="student-class">—</div>
+                            </div>
+                        </div>
+                        <div class="profile-info-card">
+                            <div class="info-icon">📚</div>
+                            <div class="info-content">
+                                <div class="info-label">Статус</div>
+                                <div class="info-value">Ученик</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Profile Modal -->
+    <div class="modal modal-fullscreen" id="teacher-profile-modal">
+        <div class="modal-overlay" id="teacher-profile-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <button class="back-button" id="teacher-profile-back" aria-label="Назад">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Назад
+                </button>
+                <h2 class="modal-title" id="teacher-profile-title">Профиль учителя</h2>
+                <button class="modal-close" id="teacher-profile-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body modal-scroll">
+                <div class="profile-container">
+                    <div class="profile-photo-section">
+                        <div class="profile-photo" id="teacher-photo">👨‍🏫</div>
+                        <h3 class="profile-name" id="teacher-fullname">Загрузка...</h3>
+                        <p class="profile-subtitle" id="teacher-subject">Предмет</p>
+                    </div>
+                    
+                    <div class="profile-info-grid">
+                        <div class="profile-info-card">
+                            <div class="info-icon">🎓</div>
+                            <div class="info-content">
+                                <div class="info-label">Классный руководитель</div>
+                                <div class="info-value" id="teacher-class">—</div>
+                            </div>
+                        </div>
+                        <div class="profile-info-card">
+                            <div class="info-icon">📚</div>
+                            <div class="info-content">
+                                <div class="info-label">Предмет</div>
+                                <div class="info-value" id="teacher-subject-value">—</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-contact-section">
+                        <h4 class="section-title">Контактная информация</h4>
+                        <div class="contact-info">
+                            <div class="contact-item">
+                                <span class="contact-icon">📧</span>
+                                <span class="contact-text" id="teacher-email">email@example.com</span>
+                            </div>
+                            <div class="contact-item">
+                                <span class="contact-icon">📞</span>
+                                <span class="contact-text" id="teacher-phone">+998 XX XXX XX XX</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teachers List Modal (by Subject) -->
+    <div class="modal modal-fullscreen" id="teachers-list-modal">
+        <div class="modal-overlay" id="teachers-list-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Учителя школы</h2>
+                <button class="modal-close" id="teachers-list-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body modal-scroll">
+                <div class="subjects-accordion" id="subjects-accordion"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <main class="main-content">
         <!-- Welcome Section -->
@@ -168,6 +454,7 @@
         </div>
     </footer>
 
+    <script src="teachers_functions.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
