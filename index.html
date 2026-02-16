@@ -11,28 +11,57 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Header with School Logo -->
-    <header class="site-header">
+    <!-- Header -->
+    <header class="header">
         <div class="header-container">
-            <div class="logo">
-                <span class="logo-text">Sehriyo</span>
-                <span class="logo-info">Info</span>
+            <h1 class="site-title">Sehriyo Info</h1>
+            <div class="header-actions">
+                <!-- Login Button (shown when logged out) -->
+                <button class="header-auth-btn" id="header-login-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    <span>Войти</span>
+                </button>
+
+                <!-- Profile Button (shown when logged in) -->
+                <button class="header-auth-btn header-profile-btn" id="header-profile-btn" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span class="profile-btn-name">Кабинет</span>
+                </button>
             </div>
-            <button class="menu-toggle" aria-label="Меню">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
         </div>
     </header>
 
-    <!-- Sidebar Navigation Menu -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-        <nav class="sidebar-content">
-            <div class="sidebar-header">
-                <h2 class="sidebar-title">Навигация</h2>
-                <button class="sidebar-close" id="sidebar-close" aria-label="Закрыть меню">
+    <!-- Auth Modal -->
+    <div class="modal" id="auth-modal">
+        <div class="modal-overlay" id="auth-modal-overlay"></div>
+        <div class="modal-content auth-modal-content">
+            <!-- Tab Header -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="auth-tab-login" onclick="switchAuthForm('login')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                        <polyline points="10 17 15 12 10 7"></polyline>
+                        <line x1="15" y1="12" x2="3" y2="12"></line>
+                    </svg>
+                    Вход
+                </button>
+                <button class="auth-tab" id="auth-tab-register" onclick="switchAuthForm('register')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="8.5" cy="7" r="4"></circle>
+                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                        <line x1="23" y1="11" x2="17" y2="11"></line>
+                    </svg>
+                    Регистрация
+                </button>
+                <button class="auth-close-btn" id="auth-modal-close" aria-label="Закрыть">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -40,40 +69,142 @@
                 </button>
             </div>
             
-            <ul class="sidebar-nav">
-                <li class="sidebar-nav-item">
-                    <a href="#students" class="sidebar-nav-link">
-                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                        <span>Ученики</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="#teachers" class="sidebar-nav-link">
-                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                        </svg>
-                        <span>Учителя</span>
-                    </a>
-                </li>
-                <li class="sidebar-nav-item">
-                    <a href="#administration" class="sidebar-nav-link">
-                        <svg class="sidebar-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="9" y1="9" x2="15" y2="9"></line>
-                            <line x1="9" y1="15" x2="15" y2="15"></line>
-                        </svg>
-                        <span>Администрация</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
-    </aside>
+            <div class="auth-body">
+                <div id="auth-message" class="auth-message" style="display:none;"></div>
+
+                <!-- Login Form -->
+                <div id="login-form-container" class="auth-form-container">
+                    <form id="login-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="login-username">Логин</label>
+                            <input type="text" id="login-username" placeholder="Введите ваш логин" required autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="login-password">Пароль</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="login-password" placeholder="Введите пароль" required autocomplete="current-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Показать пароль">
+                                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                <polyline points="10 17 15 12 10 7"></polyline>
+                                <line x1="15" y1="12" x2="3" y2="12"></line>
+                            </svg>
+                            Войти
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Register Form -->
+                <div id="register-form-container" class="auth-form-container hidden">
+                    <form id="register-form" class="auth-form">
+                        <div class="form-group">
+                            <label for="reg-name">ФИО</label>
+                            <input type="text" id="reg-name" placeholder="Иванов Иван Иванович" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-username">Логин</label>
+                            <input type="text" id="reg-username" placeholder="Придумайте логин (латиницей)" required autocomplete="username">
+                            <span class="form-hint">Латинские буквы, цифры. Например: ivan2015</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-password">Пароль</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-password" placeholder="Минимум 6 символов" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Показать пароль">
+                                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-password-confirm">Подтвердите пароль</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="reg-password-confirm" placeholder="Повторите пароль" required autocomplete="new-password">
+                                <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Показать пароль">
+                                    <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <svg class="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20" style="display:none;">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg-role">Роль</label>
+                            <select id="reg-role" required onchange="onRoleChange()">
+                                <option value="" disabled selected>Выберите роль</option>
+                                <option value="teacher">👨‍🏫 Учитель</option>
+                                <option value="student">🎒 Ученик</option>
+                                <option value="parent">👨‍👩‍👧 Родитель</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="class-code-group" style="display:none;">
+                            <label for="reg-class-code">Код класса</label>
+                            <input type="text" id="reg-class-code" placeholder="Введите код, который дал учитель">
+                            <span class="form-hint">Код нужен для привязки к вашему классу</span>
+                        </div>
+                        <button type="submit" class="auth-submit-btn" id="reg-submit-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="8.5" cy="7" r="4"></circle>
+                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                <line x1="23" y1="11" x2="17" y2="11"></line>
+                            </svg>
+                            Зарегистрироваться
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Modal (Personal Cabinet) -->
+    <div class="modal modal-fullscreen" id="dashboard-modal">
+        <div class="modal-overlay" id="dashboard-modal-overlay"></div>
+        <div class="modal-content modal-fullscreen-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Личный кабинет</h2>
+                <button class="modal-close" id="dashboard-modal-close" aria-label="Закрыть">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body modal-scroll">
+                <div id="dashboard-content" class="dashboard-content">
+                    <p class="empty-list-message">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Students Level Selection Modal -->
     <div class="modal" id="students-modal">
@@ -127,7 +258,6 @@
                     </button>
                 </div>
             </div>
-        </div>
         </div>
     </div>
 
@@ -186,25 +316,18 @@
 
                     <div class="detail-section">
                         <h3 class="detail-section-title">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
                             Информация о классе
                         </h3>
                         <div class="class-stats-grid">
                             <div class="stat-card">
-                                <div class="stat-icon">👥</div>
                                 <div class="stat-value" id="students-count">0</div>
                                 <div class="stat-label">Учеников</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon">🚪</div>
                                 <div class="stat-value" id="classroom-number">—</div>
                                 <div class="stat-label">Кабинет</div>
                             </div>
                             <div class="stat-card">
-                                <div class="stat-icon">👤</div>
                                 <div class="stat-value" id="class-monitor">—</div>
                                 <div class="stat-label">Староста</div>
                             </div>
@@ -222,119 +345,6 @@
                             Список учеников
                         </h3>
                         <div class="students-list" id="students-list"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Student Profile Modal -->
-    <div class="modal modal-fullscreen" id="student-profile-modal">
-        <div class="modal-overlay" id="student-profile-overlay"></div>
-        <div class="modal-content modal-fullscreen-content">
-            <div class="modal-header">
-                <button class="back-button" id="student-profile-back" aria-label="Назад">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Назад
-                </button>
-                <h2 class="modal-title" id="student-profile-title">Профиль ученика</h2>
-                <button class="modal-close" id="student-profile-close" aria-label="Закрыть">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="modal-body modal-scroll">
-                <div class="profile-container">
-                    <div class="profile-photo-section">
-                        <div class="profile-photo" id="student-photo">👤</div>
-                        <h3 class="profile-name" id="student-fullname">Загрузка...</h3>
-                    </div>
-                    
-                    <div class="profile-info-grid">
-                        <div class="profile-info-card">
-                            <div class="info-icon">🎓</div>
-                            <div class="info-content">
-                                <div class="info-label">Класс</div>
-                                <div class="info-value" id="student-class">—</div>
-                            </div>
-                        </div>
-                        <div class="profile-info-card">
-                            <div class="info-icon">📚</div>
-                            <div class="info-content">
-                                <div class="info-label">Статус</div>
-                                <div class="info-value">Ученик</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Teacher Profile Modal -->
-    <div class="modal modal-fullscreen" id="teacher-profile-modal">
-        <div class="modal-overlay" id="teacher-profile-overlay"></div>
-        <div class="modal-content modal-fullscreen-content">
-            <div class="modal-header">
-                <button class="back-button" id="teacher-profile-back" aria-label="Назад">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Назад
-                </button>
-                <h2 class="modal-title" id="teacher-profile-title">Профиль учителя</h2>
-                <button class="modal-close" id="teacher-profile-close" aria-label="Закрыть">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            
-            <div class="modal-body modal-scroll">
-                <div class="profile-container">
-                    <div class="profile-photo-section">
-                        <div class="profile-photo" id="teacher-photo">👨‍🏫</div>
-                        <h3 class="profile-name" id="teacher-fullname">Загрузка...</h3>
-                        <p class="profile-subtitle" id="teacher-subject">Предмет</p>
-                    </div>
-                    
-                    <div class="profile-info-grid">
-                        <div class="profile-info-card">
-                            <div class="info-icon">🎓</div>
-                            <div class="info-content">
-                                <div class="info-label">Классный руководитель</div>
-                                <div class="info-value" id="teacher-class">—</div>
-                            </div>
-                        </div>
-                        <div class="profile-info-card">
-                            <div class="info-icon">📚</div>
-                            <div class="info-content">
-                                <div class="info-label">Предмет</div>
-                                <div class="info-value" id="teacher-subject-value">—</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="profile-contact-section">
-                        <h4 class="section-title">Контактная информация</h4>
-                        <div class="contact-info">
-                            <div class="contact-item">
-                                <span class="contact-icon">📧</span>
-                                <span class="contact-text" id="teacher-email">email@example.com</span>
-                            </div>
-                            <div class="contact-item">
-                                <span class="contact-icon">📞</span>
-                                <span class="contact-text" id="teacher-phone">+998 XX XXX XX XX</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -363,98 +373,69 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Welcome Section -->
-        <section class="welcome-section">
-            <div class="welcome-container">
-                <h1 class="welcome-title">Добро пожаловать</h1>
-                <p class="welcome-subtitle">в информационный портал школы Сехрие</p>
-                <div class="welcome-decoration"></div>
-            </div>
-        </section>
+        <div class="welcome-heading">
+            <h2 class="welcome-title">Добро пожаловать!</h2>
+            <p class="welcome-subtitle">Вы находитесь в информационном портале школы Сехрие</p>
+        </div>
+        <div class="main-nav-container">
+            <button class="main-nav-btn" id="nav-students">
+                <div class="main-nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <span class="main-nav-label">Ученики</span>
+                <span class="main-nav-desc">Списки и профили учеников</span>
+                <svg class="main-nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
 
-        <!-- News Feed Section -->
-        <section class="news-section">
-            <div class="news-header">
-                <h2 class="news-title">Новости</h2>
-                <p class="news-subtitle">Последние события школы Сехрие</p>
-            </div>
+            <button class="main-nav-btn" id="nav-teachers">
+                <div class="main-nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                    </svg>
+                </div>
+                <span class="main-nav-label">Учителя</span>
+                <span class="main-nav-desc">Педагогический состав школы</span>
+                <svg class="main-nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
 
-            <div class="news-feed">
-                <!-- News Article 1 -->
-                <article class="news-article">
-                    <div class="news-date">
-                        <span class="news-day">14</span>
-                        <span class="news-month">Фев</span>
-                    </div>
-                    <div class="news-content">
-                        <h3 class="news-article-title">Открытие нового компьютерного класса</h3>
-                        <p class="news-article-excerpt">
-                            Рады сообщить, что в нашей школе открылся современный компьютерный класс, 
-                            оснащенный новейшим оборудованием для изучения программирования и информатики.
-                        </p>
-                        <a href="#news1" class="news-read-more">Читать полностью →</a>
-                    </div>
-                </article>
-
-                <!-- News Article 2 -->
-                <article class="news-article">
-                    <div class="news-date">
-                        <span class="news-day">10</span>
-                        <span class="news-month">Фев</span>
-                    </div>
-                    <div class="news-content">
-                        <h3 class="news-article-title">Победа в городской олимпиаде по математике</h3>
-                        <p class="news-article-excerpt">
-                            Наши ученики заняли призовые места на городской олимпиаде по математике. 
-                            Поздравляем победителей и желаем дальнейших успехов!
-                        </p>
-                        <a href="#news2" class="news-read-more">Читать полностью →</a>
-                    </div>
-                </article>
-
-                <!-- News Article 3 -->
-                <article class="news-article">
-                    <div class="news-date">
-                        <span class="news-day">05</span>
-                        <span class="news-month">Фев</span>
-                    </div>
-                    <div class="news-content">
-                        <h3 class="news-article-title">Новое расписание кружков и секций</h3>
-                        <p class="news-article-excerpt">
-                            Опубликовано обновленное расписание дополнительных занятий. 
-                            Записаться можно у классного руководителя или в администрации школы.
-                        </p>
-                        <a href="#news3" class="news-read-more">Читать полностью →</a>
-                    </div>
-                </article>
-
-                <!-- News Article 4 -->
-                <article class="news-article">
-                    <div class="news-date">
-                        <span class="news-day">01</span>
-                        <span class="news-month">Фев</span>
-                    </div>
-                    <div class="news-content">
-                        <h3 class="news-article-title">День открытых дверей для будущих первоклассников</h3>
-                        <p class="news-article-excerpt">
-                            15 февраля приглашаем родителей будущих первоклассников познакомиться со школой, 
-                            учителями и условиями обучения.
-                        </p>
-                        <a href="#news4" class="news-read-more">Читать полностью →</a>
-                    </div>
-                </article>
-            </div>
-        </section>
+            <button class="main-nav-btn" id="nav-administration">
+                <div class="main-nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="9" y1="9" x2="15" y2="9"></line>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <span class="main-nav-label">Администрация</span>
+                <span class="main-nav-desc">Руководство и управление</span>
+                <svg class="main-nav-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
     </main>
 
     <!-- Footer -->
     <footer class="site-footer">
         <div class="footer-content">
-            <p>&copy; 2026 Школа Сехрие. Все права защищены.</p>
+            <p>&copy; 2026 Школа Сехрие. Все права защищены. | v7.2</p>
         </div>
     </footer>
 
-    <script src="teachers_functions.js"></script>
-    <script src="script.js"></script>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Main Script -->
+    <script src="script.js?v=7.2"></script>
 </body>
 </html>
