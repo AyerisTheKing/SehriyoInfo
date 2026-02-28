@@ -1,4 +1,4 @@
-// Version: 8.2
+// Version: 8.8
 // Sehriyo School Website - Main JavaScript
 // Created: 2026-02-14
 // Updated: 2026-02-21 - Teacher profiles, unified teachers data
@@ -396,15 +396,15 @@ function initSupabase() {
 // INITIALIZATION
 // ============================================
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("🎓 Sehriyo School Website v7.0 loaded");
+  console.log("🎓 Sehriyo School Website v8.8 loaded");
 
   initSupabase();
   initializeMainNav();
   initializeModals();
-  initializeNavigation();
-  initializeAnimations();
   initializeAuth();
+  initializeLightbox();
 });
+
 
 // ============================================
 // AUTHENTICATION
@@ -526,7 +526,7 @@ async function handleSignUp(e) {
       return showAuthError(
         "Неверный код класса. Попросите код у своего классного руководителя.",
       );
-      return;
+
     }
     classId = classData.id;
     console.log(`✅ Class found: ${classData.grade}-${classData.letter}`);
@@ -1176,35 +1176,6 @@ function getRoleName(role) {
 // NAVIGATION & SECTIONS
 // ============================================
 
-/**
- * News Article Interactions
- */
-function initializeNavigation() {
-  const newsArticles = document.querySelectorAll(".news-article");
-  const readMoreLinks = document.querySelectorAll(".news-read-more");
-
-  newsArticles.forEach((article) => {
-    article.addEventListener("mouseenter", function () {
-      this.style.transform = "translateX(8px)";
-    });
-    article.addEventListener("mouseleave", function () {
-      this.style.transform = "";
-    });
-  });
-
-  readMoreLinks.forEach((link) => {
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
-      const newsId = this.getAttribute("href").substring(1);
-      handleNewsArticle(newsId);
-    });
-  });
-}
-
-function handleNewsArticle(newsId) {
-  console.log(`📰 Opening news article: ${newsId}`);
-  showComingSoonMessage("Полная статья");
-}
 
 function handleStudentsSection() {
   console.log("📚 Opening Students level selection");
@@ -1264,26 +1235,6 @@ function showComingSoonMessage(section) {
   }, 3000);
 }
 
-/**
- * Initialize Scroll Animations
- */
-function initializeAnimations() {
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: "0px 0px -50px 0px",
-  };
-
-  const observer = new IntersectionObserver(function (entries) {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("is-visible");
-      }
-    });
-  }, observerOptions);
-
-  const cards = document.querySelectorAll(".nav-card");
-  cards.forEach((card) => observer.observe(card));
-}
 
 /**
  * Main Navigation Buttons
@@ -1519,53 +1470,66 @@ function generateGradesAccordion(grades) {
   const accordion = document.getElementById("grades-accordion");
   accordion.innerHTML = "";
 
-  const gradeLetters = {
-    1: ["А", "Б", "В", "Г"],
-    2: ["А", "Б", "В", "Г", "Д"],
-    3: ["А", "В", "Г", "Д"],
-    4: ["А", "Б", "В", "Г", "Д", "И"],
-    5: ["А", "Б", "В", "Г", "Д"],
-    6: ["А", "Б", "В", "Г", "Д"],
-    7: ["А", "Б", "В", "Г", "Д"],
-    8: ["А", "Б", "В", "Г", "Д"],
-    9: ["Б", "В", "Д", "И"],
-    10: [],
-    11: [],
+  // Для 1-9 классов: массив букв (Буква добавляется к номеру класса, id = "5а", "9б" ...
+  // Для 10-11 классов: конкретные id классов (совпадают с именем файла без .jpg)
+  const gradeData = {
+    1:  { letters: ["А", "Б", "В", "Г"] },
+    2:  { letters: ["А", "Б", "В", "Г", "Д"] },
+    3:  { letters: ["А", "В", "Г", "Д"] },
+    4:  { letters: ["А", "Б", "В", "Г", "Д", "И"] },
+    5:  { letters: ["А", "Б", "В", "Г", "Д"] },
+    6:  { letters: ["А", "Б", "В", "Г", "Д"] },
+    7:  { letters: ["А", "Б", "В", "Г", "Д"] },
+    8:  { letters: ["А", "Б", "В", "Г", "Д"] },
+    9:  { letters: ["Б", "В", "Д", "И"] },
+    10: { classes: ["10а-инж", "10в-гум", "10г-ест"] },
+    11: { classes: ["11а-эк", "11б-эк", "11в-гум", "11г-ест"] },
   };
 
   grades.forEach((grade) => {
-    const letters = gradeLetters[grade] || [];
+    const data = gradeData[grade] || {};
     const item = document.createElement("div");
     item.className = "accordion-item";
 
-    if (letters.length === 0) {
+    // Старшая школа: фиксированные названия классов
+    if (data.classes) {
       item.innerHTML = `
-                <button class="class-btn class-btn-single" data-class="${grade}">
-                    ${grade} класс
-                </button>
-            `;
-    } else {
+        <div class="accordion-header" data-grade="${grade}">
+          <h3 class="accordion-title">${grade}-е классы</h3>
+          <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            ${data.classes.map(cls => `
+              <button class="class-btn class-btn-profile" data-class="${cls}">
+                ${cls.toUpperCase()}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+    // Начальная/средняя школа: буквы
+    else if (data.letters && data.letters.length > 0) {
       item.innerHTML = `
-                <div class="accordion-header" data-grade="${grade}">
-                    <h3 class="accordion-title">${grade}-е классы</h3>
-                    <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </div>
-                <div class="accordion-content">
-                    <div class="accordion-body">
-                        ${letters
-                          .map(
-                            (letter) => `
-                            <button class="class-btn" data-class="${grade}-${letter}">
-                                ${grade}-${letter}
-                            </button>
-                        `,
-                          )
-                          .join("")}
-                    </div>
-                </div>
-            `;
+        <div class="accordion-header" data-grade="${grade}">
+          <h3 class="accordion-title">${grade}-е классы</h3>
+          <svg class="accordion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            ${data.letters.map(letter => `
+              <button class="class-btn" data-class="${grade} ${letter.toLowerCase()}">
+                ${grade}-${letter}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
     }
 
     accordion.appendChild(item);
@@ -1574,6 +1538,7 @@ function generateGradesAccordion(grades) {
   initializeAccordion();
   initializeClassButtons();
 }
+
 
 function initializeAccordion() {
   const headers = document.querySelectorAll(".accordion-header");
@@ -1606,81 +1571,284 @@ function initializeClassButtons() {
   });
 }
 
-function openClassDetails(className) {
-  console.log(`📚 Opening details for class: ${className}`);
+function openClassDetails(classId) {
+  console.log(`📚 Opening details for class: ${classId}`);
+
+  // Форматируем красивый заголовок:
+  // "5 а" → "Класс 5-А"
+  // "10а-инж" → "Класс 10А-ИНЖ"
+  const displayName = classId.includes(" ")
+    ? `Класс ${classId.replace(" ", "-").toUpperCase()}`
+    : `Класс ${classId.toUpperCase()}`;
 
   closeModal("class-selection-modal");
 
   setTimeout(() => {
-    document.getElementById("class-details-title").textContent =
-      `Класс ${className}`;
-    loadClassData(className);
+    document.getElementById("class-details-title").textContent = displayName;
+    loadClassData(classId);
     openModal("class-details-modal");
   }, 300);
 }
 
 // ============================================
-// LOAD CLASS DATA FROM SUPABASE
+// LOAD CLASS DATA
 // ============================================
 
 /**
  * Load class data from local TEACHERS_DATA
- * @param {string} className - e.g. "5-А" or "10"
+ * @param {string} classId - e.g. "5 а", "10а-инж"
  */
-async function loadClassData(className) {
+async function loadClassData(classId) {
   // Set loading state
   document.getElementById("teacher-name").textContent = "Загрузка...";
   document.getElementById("classroom-number").textContent = "...";
-  document.getElementById("students-count").textContent = "...";
 
-  // Get teacher info from local data
-  const teacher = getTeacherByClass(className);
+  // Для 1-9 классов ("5 а") — ищем учителя по классу ("такой-то класс" в TEACHERS_DATA)
+  // Для старшей школы ("10а-инж") — имя класса нефандартное
+  // Преобразуем classId в формат TEACHERS_DATA ("5 а" → "5-А")
+  const teacherKey = classId.includes(" ")
+    ? classId.replace(/\s+/g, "-").replace(/-([a-zа-я])/g, (_, c) => "-" + c.toUpperCase())
+    : classId;
+
+  const teacher = getTeacherByClass(teacherKey);
 
   if (teacher) {
     document.getElementById("teacher-name").textContent = teacher.name;
-    document.getElementById("classroom-number").textContent = teacher.classroom;
-    document.getElementById("students-count").textContent = "—"; // Количество учеников неизвестно
+    document.getElementById("classroom-number").textContent = teacher.classroom || "—";
   } else {
     document.getElementById("teacher-name").textContent = "—";
     document.getElementById("classroom-number").textContent = "—";
-    document.getElementById("students-count").textContent = "0";
   }
 
-  // Load class photo and schedule
-  loadClassPhotoAndSchedule(className);
+  // Load schedule image
+  loadClassSchedule(classId);
 }
 
 /**
- * Load class photo and schedule based on class name
- * @param {string} className - e.g. "5-А" or "10"
+ * Render schedule for a given class — shows image from assets/img
+ * @param {string} classId - e.g. "5 а", "10а-инж"
  */
-function loadClassPhotoAndSchedule(className) {
-  const photoEl = document.getElementById("class-photo");
+function loadClassSchedule(classId) {
   const scheduleEl = document.getElementById("schedule-container");
+  if (!scheduleEl) return;
 
-  // Try to load class photo from assets
-  // Expected format: assets/img/class-1-А.jpg, assets/img/class-5-Б.png, etc.
-  const photoPath = `assets/img/class-${className.replace(/-/g, "-")}.jpg`;
+  // Преобразуем classId в имя файла
+  // "5 а" → "5а.jpg", "10а-инж" → "10а-инж.jpg"
+  const fileName = classId.replace(/\s+/g, "").toLowerCase();
+  const imagePath = `assets/img/${fileName}.jpg`;
 
-  // For now, show placeholder or hide if no photo
-  photoEl.src = photoPath;
-  photoEl.alt = `Фотография класса ${className}`;
-
-  // Handle image load error - hide if not found
-  photoEl.onerror = function () {
-    this.style.display = "none";
-  };
-  photoEl.onload = function () {
-    this.style.display = "block";
-  };
-
-  // Schedule placeholder - will be implemented later
   scheduleEl.innerHTML = `
-        <div class="schedule-placeholder">
-            <p class="empty-list-message">Расписание загружается...</p>
-        </div>
-    `;
+    <div class="schedule-image-wrapper" onclick="openScheduleLightbox('${imagePath}', '${classId}')">
+      <img
+        class="schedule-image"
+        src="${imagePath}"
+        alt="Расписание класса ${classId}"
+        onerror="this.closest('.schedule-image-wrapper').outerHTML='<p class=\\'empty-list-message\\'>📅 Расписание для этого класса пока не добавлено</p>'"
+      >
+    </div>
+    <p class="schedule-tap-hint">👆 Нажмите на расписание для увеличения</p>
+  `;
 }
+
+// ============================================
+// SCHEDULE LIGHTBOX
+// ============================================
+
+let lbScale = 1;
+let lbTranslateX = 0;
+let lbTranslateY = 0;
+const LB_MIN = 0.5;
+const LB_MAX = 6;
+const LB_STEP = 0.25;
+
+function openScheduleLightbox(src, classId) {
+  const lb = document.getElementById("schedule-lightbox");
+  const img = document.getElementById("lightbox-img");
+  if (!lb || !img) return;
+
+  img.src = src;
+  img.alt = `Расписание класса ${classId}`;
+  lbScale = 1;
+  lbTranslateX = 0;
+  lbTranslateY = 0;
+  applyLbTransform();
+
+  lb.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closeScheduleLightbox() {
+  const lb = document.getElementById("schedule-lightbox");
+  if (lb) lb.classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+function clampLbTranslate() {
+  const img = document.getElementById("lightbox-img");
+  if (!img) return;
+  // img.offsetWidth/Height = размер без трансформ (layout size)
+  const maxX = img.offsetWidth * lbScale * 0.5;
+  const maxY = img.offsetHeight * lbScale * 0.5;
+  lbTranslateX = Math.max(-maxX, Math.min(maxX, lbTranslateX));
+  lbTranslateY = Math.max(-maxY, Math.min(maxY, lbTranslateY));
+}
+
+function applyLbTransform() {
+  const img = document.getElementById("lightbox-img");
+  const label = document.getElementById("lightbox-zoom-label");
+  clampLbTranslate();
+  if (img) {
+    img.style.transform = `translate(${lbTranslateX}px, ${lbTranslateY}px) scale(${lbScale})`;
+  }
+  if (label) {
+    label.textContent = Math.round(lbScale * 100) + "%";
+  }
+}
+
+
+function lbZoom(delta, cx, cy) {
+  const viewport = document.getElementById("lightbox-viewport");
+  const img = document.getElementById("lightbox-img");
+  if (!viewport || !img) return;
+
+  const prevScale = lbScale;
+  lbScale = Math.min(LB_MAX, Math.max(LB_MIN, lbScale + delta));
+
+  // Зумируем относительно точки курсора/пальца
+  if (cx !== undefined && cy !== undefined) {
+    const rect = viewport.getBoundingClientRect();
+    const ox = cx - rect.left - rect.width / 2;
+    const oy = cy - rect.top - rect.height / 2;
+    const scaleDiff = lbScale / prevScale;
+    lbTranslateX = ox - (ox - lbTranslateX) * scaleDiff;
+    lbTranslateY = oy - (oy - lbTranslateY) * scaleDiff;
+  }
+
+  if (lbScale === 1) {
+    lbTranslateX = 0;
+    lbTranslateY = 0;
+  }
+
+  applyLbTransform();
+}
+
+function initializeLightbox() {
+  const lb = document.getElementById("schedule-lightbox");
+  const viewport = document.getElementById("lightbox-viewport");
+  if (!lb || !viewport) return;
+
+  // Кнопки
+  document.getElementById("lightbox-close").addEventListener("click", closeScheduleLightbox);
+  document.getElementById("lightbox-overlay").addEventListener("click", closeScheduleLightbox);
+  document.getElementById("lightbox-zoom-in").addEventListener("click", () => lbZoom(LB_STEP));
+  document.getElementById("lightbox-zoom-out").addEventListener("click", () => lbZoom(-LB_STEP));
+  document.getElementById("lightbox-reset").addEventListener("click", () => {
+    lbScale = 1; lbTranslateX = 0; lbTranslateY = 0; applyLbTransform();
+  });
+
+  // ESC
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && lb.classList.contains("active")) closeScheduleLightbox();
+  });
+
+  // ──── Колёсико мыши ────
+  viewport.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? LB_STEP : -LB_STEP;
+    lbZoom(delta, e.clientX, e.clientY);
+  }, { passive: false });
+
+  // ──── Перетаскивание мышью ────
+  let isDragging = false;
+  let dragStartX = 0, dragStartY = 0;
+  let dragTX = 0, dragTY = 0;
+
+  viewport.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    isDragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragTX = lbTranslateX;
+    dragTY = lbTranslateY;
+    viewport.classList.add("dragging");
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    lbTranslateX = dragTX + (e.clientX - dragStartX);
+    lbTranslateY = dragTY + (e.clientY - dragStartY);
+    applyLbTransform();
+  });
+
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+    viewport.classList.remove("dragging");
+  });
+
+  // ──── Touch: pinch-to-zoom + pan ────
+  let lastDist = 0;
+  let lastTouchX = 0, lastTouchY = 0;
+  let touchStartTX = 0, touchStartTY = 0;
+  let touchStartX = 0, touchStartY = 0;
+
+  viewport.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      lastTouchX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      lastTouchY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    } else if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTX = lbTranslateX;
+      touchStartTY = lbTranslateY;
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchmove", (e) => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+      if (lastDist > 0) {
+        const scaleFactor = dist / lastDist;
+        const newScale = Math.min(LB_MAX, Math.max(LB_MIN, lbScale * scaleFactor));
+        const rect = viewport.getBoundingClientRect();
+        const ox = cx - rect.left - rect.width / 2;
+        const oy = cy - rect.top - rect.height / 2;
+        const ratio = newScale / lbScale;
+        lbTranslateX = ox - (ox - lbTranslateX) * ratio + (cx - lastTouchX);
+        lbTranslateY = oy - (oy - lbTranslateY) * ratio + (cy - lastTouchY);
+        lbScale = newScale;
+        applyLbTransform();
+      }
+
+      lastDist = dist;
+      lastTouchX = cx;
+      lastTouchY = cy;
+    } else if (e.touches.length === 1) {
+      lbTranslateX = touchStartTX + (e.touches[0].clientX - touchStartX);
+      lbTranslateY = touchStartTY + (e.touches[0].clientY - touchStartY);
+      applyLbTransform();
+    }
+  }, { passive: false });
+
+  viewport.addEventListener("touchend", (e) => {
+    lastDist = 0;
+    if (e.touches.length === 0 && lbScale < 1.05) {
+      lbScale = 1; lbTranslateX = 0; lbTranslateY = 0; applyLbTransform();
+    }
+  });
+}
+
 
 // ============================================
 // TEACHERS FUNCTIONS
