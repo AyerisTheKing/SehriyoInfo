@@ -1,17 +1,8 @@
-// Version: 8.8
-// Sehriyo School Website - Main JavaScript
-// Created: 2026-02-14
-// Updated: 2026-02-21 - Teacher profiles, unified teachers data
+// Глобальная версия сайта — меняй только здесь, всё остальное обновится автоматически
+const APP_VERSION = "11.2";
 
-// ============================================
-// SUPABASE CONFIGURATION
-// ============================================
-const SUPABASE_URL = "https://pqfzqzxkfbyrunwjlyfc.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_yAe0igd_Zt1QoXq8OTlY2w_oSDEjFXZ";
 
-let supabaseClient = null;
-let currentUser = null;
-let currentProfile = null;
+
 
 // ============================================
 // TEACHERS AND CLASSES DATA
@@ -251,19 +242,18 @@ const TEACHERS_DATA = [
     subject: "Английский язык",
   },
 
-  // ==================== СТАРШАЯ ШКОЛА (10-11 классы) ====================
+  // ==================== СТАРШАЯ ШКОЛА (10-11 классы) — ТЬЮТОРЫ ====================
   {
     name: "Галимов А.М.",
-    class: "10",
-    classroom: "IT кабинет",
-    subject: "Информатика",
+    class: "не определён", // TODO: уточнить: 10а-инж, 10в-гум или 10г-ест
+    classroom: "IT хаб",
+    subject: "Тьютор",
   },
-  {
-    name: "Арапова А.А.",
-    class: "11",
-    classroom: "115",
-    subject: "Английский язык",
-  },
+  // 11 классы
+  { name: "Арапова Аселя",        class: "11а-эк", classroom: "115", subject: "Тьютор" },
+  { name: "Ильясова Анастасия",    class: "11б-эк", classroom: "312", subject: "Тьютор" },
+  { name: "Холмухамедова Нигора",   class: "11в-гум", classroom: "402", subject: "Тьютор" },
+  { name: "Холмухамедова Нигора",   class: "11г-ест", classroom: "402", subject: "Тьютор" },
 
   // ==================== ПРЕДМЕТНИКИ (без классов) ====================
   // История
@@ -338,839 +328,47 @@ const TEACHERS_DATA = [
   { name: 'Гурецкая Марина', class: '', classroom: '113', subject: 'Британский этикет' },
 ];
 
-// Получить всех уникальных учителей (без дубликатов по фамилии)
-function getAllUniqueTeachers() {
-  const seen = new Set();
-  return TEACHERS_DATA.filter((teacher) => {
-    // Нормализуем имя для сравнения (убираем точки, пробелы, приводим к нижнему регистру)
-    const normalizedName = teacher.name.toLowerCase().replace(/[.\s]/g, "");
-    // Берём только фамилию (первое слово до пробела)
-    const surname = normalizedName.split(" ")[0];
+// ============================================
+// TEACHERS LOOKUP MAPS (поиск за O(1))
+// ============================================
+// Создаются один раз при загрузке — мгновенный поиск вместо перебора массива
+const TEACHERS_BY_CLASS = new Map(TEACHERS_DATA.filter(t => t.class).map(t => [t.class, t]));
+const TEACHERS_BY_NAME  = new Map(TEACHERS_DATA.filter(t => t.name).map(t => [t.name, t]));
 
-    if (seen.has(surname)) {
-      return false;
-    }
-    seen.add(surname);
-    return true;
-  });
-}
-
-// Получить учителей по предмету
-function getTeachersBySubject(subject) {
-  return TEACHERS_DATA.filter((t) => t.subject === subject);
-}
-
-// Получить учителя по имени
 function getTeacherByName(name) {
-  return TEACHERS_DATA.find((t) => t.name === name);
+  return TEACHERS_BY_NAME.get(name) ?? null;
 }
 
-// Helper function to get teacher info by class name
+// Получить учителя по классному руководству
 function getTeacherByClass(className) {
-  return TEACHERS_DATA.find((t) => t.class === className);
+  return TEACHERS_BY_CLASS.get(className) ?? null;
 }
 
-// Получить учителей по фамилии (все записи)
-function getTeachersBySurname(surname) {
-  const normalizedSurname = surname.toLowerCase().replace(/[.\s]/g, "");
+// Получить учителей по фамилии (все записи, перебор нужен)
+function getTeachersBySurname(fullName) {
+  // Extract just the surname from the input full name to compare it properly
+  const surnameToMatch = fullName.toLowerCase().split(" ")[0].replace(/[.\s]/g, "");
   return TEACHERS_DATA.filter((t) => {
     const tSurname = t.name.toLowerCase().split(" ")[0].replace(/[.\s]/g, "");
-    return tSurname === normalizedSurname;
+    return tSurname === surnameToMatch;
   });
-}
-
-function initSupabase() {
-  if (typeof window.supabase !== "undefined" && window.supabase.createClient) {
-    supabaseClient = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-    );
-    console.log("✅ Supabase initialized");
-    return true;
-  }
-  console.warn("⚠️ Supabase SDK not loaded");
-  return false;
 }
 
 // ============================================
 // INITIALIZATION
 // ============================================
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("🎓 Sehriyo School Website v8.8 loaded");
+  console.log(`🎓 Sehriyo School Website v${APP_VERSION} loaded`);
 
-  initSupabase();
   initializeMainNav();
   initializeModals();
-  initializeAuth();
   initializeLightbox();
+
+  // Синхронизируем версию в футере автоматически
+  const footerVersion = document.getElementById("footer-version");
+  if (footerVersion) footerVersion.textContent = `v${APP_VERSION}`;
 });
 
-
-// ============================================
-// AUTHENTICATION
-// ============================================
-
-/**
- * Initialize Auth — check session, setup listeners
- */
-async function initializeAuth() {
-  if (!supabaseClient) return;
-
-  // Listen for auth state changes
-  supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    console.log("🔐 Auth event:", event);
-    if (session?.user) {
-      currentUser = session.user;
-      // Не загружаем профиль здесь, чтобы избежать дублирования
-      updateUIForLoggedInUser();
-    } else {
-      currentUser = null;
-      currentProfile = null;
-      updateUIForLoggedOutUser();
-    }
-  });
-
-  // Check existing session
-  const {
-    data: { session },
-  } = await supabaseClient.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    await loadCurrentProfile();
-    updateUIForLoggedInUser();
-  }
-}
-
-/**
- * Load current user's profile from profiles table
- */
-async function loadCurrentProfile() {
-  if (!supabaseClient || !currentUser) return null;
-
-  // Кэширование: если профиль уже загружен, не делаем запрос
-  if (currentProfile && currentProfile.id === currentUser.id) {
-    return currentProfile;
-  }
-
-  const { data, error } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", currentUser.id)
-    .single();
-
-  if (error) {
-    console.error("❌ Error loading profile:", error.message);
-    return null;
-  }
-  currentProfile = data;
-  console.log(
-    "👤 Profile loaded:",
-    currentProfile.full_name,
-    "| Role:",
-    currentProfile.role,
-  );
-  return currentProfile;
-}
-
-/**
- * Sign Up — register new user
- */
-async function handleSignUp(e) {
-  e.preventDefault();
-  if (!supabaseClient) return showAuthError("Supabase не инициализирован");
-
-  const fullName = document.getElementById("reg-name").value.trim();
-  const username = document.getElementById("reg-username").value.trim();
-  const password = document.getElementById("reg-password").value;
-  const confirmPassword = document.getElementById("reg-password-confirm").value;
-  const role = document.getElementById("reg-role").value;
-
-  // Validation
-  if (!fullName || !username || !password || !role) {
-    return showAuthError("Заполните все обязательные поля");
-  }
-  // Username validation: only latin letters, digits, underscores, dots
-  if (!/^[a-zA-Z0-9._]+$/.test(username)) {
-    return showAuthError(
-      "Логин может содержать только латинские буквы, цифры, точки и подчёркивания",
-    );
-  }
-  if (username.length < 3) {
-    return showAuthError("Логин должен быть не менее 3 символов");
-  }
-  if (password !== confirmPassword) {
-    return showAuthError("Пароли не совпадают");
-  }
-  if (password.length < 6) {
-    return showAuthError("Пароль должен быть не менее 6 символов");
-  }
-
-  // Construct fake email from username for Supabase Auth
-  const fakeEmail = username.toLowerCase() + "@sehriyo.local";
-
-  // For students: require class invite code
-  let classId = null;
-  if (role === "student") {
-    const inviteCode = document.getElementById("reg-class-code").value.trim();
-    if (!inviteCode) {
-      return showAuthError("Ученику необходимо ввести код класса");
-    }
-    // Verify class code
-    const { data: classData, error: classError } = await supabaseClient
-      .from("classes")
-      .select("id, grade, letter")
-      .eq("student_invite_code", inviteCode)
-      .single();
-
-    if (classError || !classData) {
-      return showAuthError(
-        "Неверный код класса. Попросите код у своего классного руководителя.",
-      );
-
-    }
-    classId = classData.id;
-    console.log(`✅ Class found: ${classData.grade}-${classData.letter}`);
-  }
-
-  // Disable submit button
-  const submitBtn = document.getElementById("reg-submit-btn");
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Регистрация...";
-
-  try {
-    // 1. Create auth user
-    const { data: authData, error: authError } =
-      await supabaseClient.auth.signUp({
-        email: fakeEmail,
-        password: password,
-        options: {
-          data: {
-            full_name: fullName,
-            role: role,
-            username: username,
-          },
-        },
-      });
-
-    if (authError) throw authError;
-
-    const userId = authData.user.id;
-
-    // 2. Create profile
-    const { error: profileError } = await supabaseClient
-      .from("profiles")
-      .insert({
-        id: userId,
-        role: role,
-        full_name: fullName,
-        username: username,
-      });
-
-    if (profileError) throw profileError;
-
-    // 3. If student — create student_details with class
-    if (role === "student" && classId) {
-      // Generate a parent invite code
-      const parentCode = generateInviteCode(12);
-      const { error: detailError } = await supabaseClient
-        .from("student_details")
-        .insert({
-          profile_id: userId,
-          class_id: classId,
-          parent_invite_code: parentCode,
-        });
-
-      if (detailError) throw detailError;
-      console.log(`📚 Student linked to class. Parent code: ${parentCode}`);
-    }
-
-    showAuthSuccess("Регистрация успешна! Проверьте почту для подтверждения.");
-    switchAuthForm("login");
-  } catch (err) {
-    console.error("❌ Registration error:", err);
-    showAuthError(err.message || "Ошибка при регистрации");
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Зарегистрироваться";
-  }
-}
-
-/**
- * Sign In with username and password
- */
-async function handleSignIn(e) {
-  e.preventDefault();
-  if (!supabaseClient) return showAuthError("Supabase не инициализирован");
-
-  const username = document.getElementById("login-username").value.trim();
-  const password = document.getElementById("login-password").value;
-
-  if (!username || !password) {
-    return showAuthError("Введите логин и пароль");
-  }
-
-  // Construct fake email from username
-  const fakeEmail = username.toLowerCase() + "@sehriyo.local";
-
-  const submitBtn = document.getElementById("login-submit-btn");
-  submitBtn.disabled = true;
-  submitBtn.textContent = "Вход...";
-
-  try {
-    const { data, error } = await supabaseClient.auth.signInWithPassword({
-      email: fakeEmail,
-      password: password,
-    });
-
-    if (error) throw error;
-
-    // Сразу загружаем профиль без ожидания onAuthStateChange
-    currentUser = data.user;
-    await loadCurrentProfile();
-    updateUIForLoggedInUser();
-
-    showAuthSuccess("Вход выполнен!");
-    setTimeout(() => closeModal("auth-modal"), 800);
-  } catch (err) {
-    console.error("❌ Login error:", err);
-    showAuthError(err.message || "Ошибка входа");
-  } finally {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "Войти";
-  }
-}
-
-/**
- * Sign Out
- */
-async function handleSignOut() {
-  if (!supabaseClient) return;
-
-  const { error } = await supabaseClient.auth.signOut();
-  if (error) {
-    console.error("❌ Sign out error:", error);
-  } else {
-    console.log("🚪 Signed out");
-    // Перезагружаем страницу после выхода
-    window.location.reload();
-  }
-}
-
-/**
- * Generate random invite code
- */
-function generateInviteCode(length) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < length; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
-
-// ============================================
-// AUTH UI
-// ============================================
-
-function updateUIForLoggedInUser() {
-  const loginBtn = document.getElementById("header-login-btn");
-  const profileBtn = document.getElementById("header-profile-btn");
-
-  if (loginBtn) loginBtn.style.display = "none";
-  if (profileBtn) {
-    profileBtn.style.display = "flex";
-    const nameEl = profileBtn.querySelector(".profile-btn-name");
-    if (nameEl && currentProfile) {
-      nameEl.textContent = currentProfile.full_name.split(" ")[0];
-    }
-  }
-}
-
-function updateUIForLoggedOutUser() {
-  const loginBtn = document.getElementById("header-login-btn");
-  const profileBtn = document.getElementById("header-profile-btn");
-
-  if (loginBtn) loginBtn.style.display = "flex";
-  if (profileBtn) profileBtn.style.display = "none";
-}
-
-function switchAuthForm(form) {
-  const loginForm = document.getElementById("login-form-container");
-  const regForm = document.getElementById("register-form-container");
-  const tabLogin = document.getElementById("auth-tab-login");
-  const tabRegister = document.getElementById("auth-tab-register");
-
-  if (form === "login") {
-    loginForm.classList.remove("hidden");
-    regForm.classList.add("hidden");
-    if (tabLogin) tabLogin.classList.add("active");
-    if (tabRegister) tabRegister.classList.remove("active");
-  } else {
-    loginForm.classList.add("hidden");
-    regForm.classList.remove("hidden");
-    if (tabLogin) tabLogin.classList.remove("active");
-    if (tabRegister) tabRegister.classList.add("active");
-  }
-  clearAuthMessages();
-}
-
-function showAuthError(msg) {
-  const el = document.getElementById("auth-message");
-  if (el) {
-    el.textContent = msg;
-    el.className = "auth-message auth-error";
-    el.style.display = "block";
-  }
-}
-
-function showAuthSuccess(msg) {
-  const el = document.getElementById("auth-message");
-  if (el) {
-    el.textContent = msg;
-    el.className = "auth-message auth-success";
-    el.style.display = "block";
-  }
-}
-
-function clearAuthMessages() {
-  const el = document.getElementById("auth-message");
-  if (el) {
-    el.textContent = "";
-    el.style.display = "none";
-  }
-}
-
-/**
- * Toggle class-code field visibility based on role selection
- */
-function onRoleChange() {
-  const role = document.getElementById("reg-role").value;
-  const classCodeGroup = document.getElementById("class-code-group");
-  if (classCodeGroup) {
-    classCodeGroup.style.display = role === "student" ? "flex" : "none";
-  }
-}
-
-/**
- * Toggle password visibility (eye icon)
- */
-function togglePassword(btn) {
-  const wrapper = btn.closest(".password-wrapper");
-  const input = wrapper.querySelector("input");
-  const eyeOpen = btn.querySelector(".eye-open");
-  const eyeClosed = btn.querySelector(".eye-closed");
-
-  if (input.type === "password") {
-    input.type = "text";
-    eyeOpen.style.display = "none";
-    eyeClosed.style.display = "block";
-  } else {
-    input.type = "password";
-    eyeOpen.style.display = "block";
-    eyeClosed.style.display = "none";
-  }
-}
-
-// ============================================
-// PARENT: Link Child by invite code
-// ============================================
-
-async function handleLinkChild(e) {
-  e.preventDefault();
-  if (!supabaseClient || !currentUser || !currentProfile) return;
-
-  if (currentProfile.role !== "parent") {
-    return showDashboardMessage(
-      "Эта функция доступна только для родителей",
-      "error",
-    );
-  }
-
-  const code = document.getElementById("child-invite-code").value.trim();
-  if (!code) {
-    return showDashboardMessage("Введите код ребёнка", "error");
-  }
-
-  try {
-    // Find student by parent_invite_code
-    const { data: student, error: findError } = await supabaseClient
-      .from("student_details")
-      .select("profile_id, profiles(full_name)")
-      .eq("parent_invite_code", code)
-      .single();
-
-    if (findError || !student) {
-      return showDashboardMessage("Неверный код ребёнка", "error");
-    }
-
-    // Check if already linked
-    const { data: existing } = await supabaseClient
-      .from("parent_students")
-      .select("student_id")
-      .eq("parent_id", currentUser.id)
-      .eq("student_id", student.profile_id)
-      .maybeSingle();
-
-    if (existing) {
-      return showDashboardMessage(
-        "Этот ребёнок уже привязан к вашему аккаунту",
-        "error",
-      );
-    }
-
-    // Link parent-student
-    const { error: linkError } = await supabaseClient
-      .from("parent_students")
-      .insert({
-        parent_id: currentUser.id,
-        student_id: student.profile_id,
-      });
-
-    if (linkError) throw linkError;
-
-    showDashboardMessage(
-      `Ребёнок "${student.profiles.full_name}" успешно привязан!`,
-      "success",
-    );
-    document.getElementById("child-invite-code").value = "";
-    await loadDashboardData();
-  } catch (err) {
-    console.error("❌ Link child error:", err);
-    showDashboardMessage("Ошибка при привязке ребёнка", "error");
-  }
-}
-
-function showDashboardMessage(msg, type) {
-  const el = document.getElementById("dashboard-message");
-  if (el) {
-    el.textContent = msg;
-    el.className = `auth-message auth-${type}`;
-    el.style.display = "block";
-    setTimeout(() => {
-      el.style.display = "none";
-    }, 4000);
-  }
-}
-
-// ============================================
-// PERSONAL DASHBOARD
-// ============================================
-
-async function openDashboard() {
-  if (!currentUser || !currentProfile) {
-    showComingSoonMessage("Войдите в аккаунт");
-    return;
-  }
-  await loadDashboardData();
-  openModal("dashboard-modal");
-}
-
-async function loadDashboardData() {
-  if (!supabaseClient || !currentProfile) return;
-
-  const dashboardContent = document.getElementById("dashboard-content");
-  if (!dashboardContent) return;
-
-  const role = currentProfile.role;
-
-  // Profile header
-  let html = `
-        <div class="dashboard-profile-card">
-            <div class="dashboard-avatar">${getAvatarEmoji(role)}</div>
-            <div class="dashboard-user-info">
-                <h3 class="dashboard-user-name">${currentProfile.full_name}</h3>
-                <span class="dashboard-role-badge role-${role}">${getRoleName(role)}</span>
-            </div>
-            <button class="dashboard-logout-btn" onclick="handleSignOut()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                Выйти
-            </button>
-        </div>
-        <div id="dashboard-message" class="auth-message" style="display:none;"></div>
-    `;
-
-  // Role-specific content
-  if (role === "parent") {
-    html += await buildParentDashboard();
-  } else if (role === "teacher") {
-    html += await buildTeacherDashboard();
-  } else if (role === "student") {
-    html += await buildStudentDashboard();
-  }
-
-  dashboardContent.innerHTML = html;
-
-  // Re-attach event handlers after rendering
-  const linkForm = document.getElementById("link-child-form");
-  if (linkForm) {
-    linkForm.addEventListener("submit", handleLinkChild);
-  }
-}
-
-/**
- * Build Parent Dashboard: list children, link form
- */
-async function buildParentDashboard() {
-  let html = `
-        <div class="detail-section">
-            <h3 class="detail-section-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="8.5" cy="7" r="4"></circle>
-                    <line x1="20" y1="8" x2="20" y2="14"></line>
-                    <line x1="23" y1="11" x2="17" y2="11"></line>
-                </svg>
-                Привязать ребёнка
-            </h3>
-            <form id="link-child-form" class="link-child-form">
-                <div class="form-group-inline">
-                    <input type="text" id="child-invite-code" placeholder="Введите код ребёнка (из ЛК ученика)" required>
-                    <button type="submit" class="auth-submit-btn btn-compact">Привязать</button>
-                </div>
-            </form>
-        </div>
-    `;
-
-  // Load children
-  const { data: children, error } = await supabaseClient
-    .from("parent_students")
-    .select(
-      `
-            student_id,
-            profiles:student_id (
-                id, full_name, email, phone, photo_url
-            )
-        `,
-    )
-    .eq("parent_id", currentUser.id);
-
-  if (children && children.length > 0) {
-    html += `
-            <div class="detail-section">
-                <h3 class="detail-section-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="9" cy="7" r="4"></circle>
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                    </svg>
-                    Мои дети (${children.length})
-                </h3>
-                <div class="children-list">
-        `;
-
-    for (const child of children) {
-      const profile = child.profiles;
-      // Load student class info
-      const { data: details } = await supabaseClient
-        .from("student_details")
-        .select("class_id, classes(grade, letter, classroom_number)")
-        .eq("profile_id", profile.id)
-        .single();
-
-      const classLabel = details?.classes
-        ? `${details.classes.grade}-${details.classes.letter}`
-        : "—";
-
-      html += `
-                <div class="child-card" onclick="viewChildDetails('${profile.id}')">
-                    <div class="child-avatar">🎒</div>
-                    <div class="child-info">
-                        <h4>${profile.full_name}</h4>
-                        <p>Класс: ${classLabel}</p>
-                    </div>
-                    <svg class="child-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </div>
-            `;
-    }
-    html += "</div></div>";
-  } else {
-    html += `
-            <div class="detail-section">
-                <p class="empty-list-message">У вас пока нет привязанных детей. Введите код ребёнка выше.</p>
-            </div>
-        `;
-  }
-
-  return html;
-}
-
-/**
- * Build Teacher Dashboard: my class info
- */
-async function buildTeacherDashboard() {
-  let html = "";
-
-  // Find classes where this teacher is supervisor
-  const { data: myClasses, error } = await supabaseClient
-    .from("classes")
-    .select("id, grade, letter, classroom_number, student_invite_code")
-    .eq("supervisor_id", currentUser.id);
-
-  if (myClasses && myClasses.length > 0) {
-    for (const cls of myClasses) {
-      // Load students of this class
-      const { data: students } = await supabaseClient
-        .from("student_details")
-        .select("profile_id, profiles(full_name, email, phone)")
-        .eq("class_id", cls.id)
-        .order("profiles(full_name)", { ascending: true });
-
-      html += `
-                <div class="detail-section">
-                    <h3 class="detail-section-title">
-                        📚 Мой класс: ${cls.grade}-${cls.letter}
-                    </h3>
-                    <div class="class-stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-value">${students?.length || 0}</div>
-                            <div class="stat-label">Учеников</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value">${cls.classroom_number || "—"}</div>
-                            <div class="stat-label">Кабинет</div>
-                        </div>
-                    </div>
-                    <div class="invite-code-box">
-                        <span class="invite-label">Код для учеников:</span>
-                        <code class="invite-code">${cls.student_invite_code || "—"}</code>
-                    </div>
-                </div>
-            `;
-
-      if (students && students.length > 0) {
-        html += `
-                    <div class="detail-section">
-                        <h3 class="detail-section-title">Список учеников</h3>
-                        <div class="students-list">
-                `;
-        students.forEach((s, i) => {
-          html += `
-                        <div class="student-item">
-                            <span class="student-number">${i + 1}.</span>
-                            <span class="student-name">${s.profiles.full_name}</span>
-                        </div>
-                    `;
-        });
-        html += "</div></div>";
-      }
-    }
-  } else {
-    html += `
-            <div class="detail-section">
-                <p class="empty-list-message">У вас нет закреплённых классов.</p>
-            </div>
-        `;
-  }
-
-  return html;
-}
-
-/**
- * Build Student Dashboard: my class, parent invite code
- */
-async function buildStudentDashboard() {
-  let html = "";
-
-  const { data: details, error } = await supabaseClient
-    .from("student_details")
-    .select(
-      "class_id, parent_invite_code, birth_date, classes(grade, letter, classroom_number)",
-    )
-    .eq("profile_id", currentUser.id)
-    .single();
-
-  if (details) {
-    const cls = details.classes;
-    html += `
-            <div class="detail-section">
-                <h3 class="detail-section-title">📚 Мой класс</h3>
-                <div class="class-stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value">${cls ? cls.grade + "-" + cls.letter : "—"}</div>
-                        <div class="stat-label">Класс</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${cls?.classroom_number || "—"}</div>
-                        <div class="stat-label">Кабинет</div>
-                    </div>
-                </div>
-            </div>
-            <div class="detail-section">
-                <h3 class="detail-section-title">👨‍👩‍👧 Код для родителя</h3>
-                <p class="dashboard-hint">Дайте этот код вашему родителю, чтобы он мог привязать вас к своему аккаунту:</p>
-                <div class="invite-code-box">
-                    <code class="invite-code invite-code-large">${details.parent_invite_code || "—"}</code>
-                </div>
-            </div>
-        `;
-  } else {
-    html += `
-            <div class="detail-section">
-                <p class="empty-list-message">Информация о классе не найдена.</p>
-            </div>
-        `;
-  }
-
-  return html;
-}
-
-/**
- * View child details (for parent switching)
- */
-async function viewChildDetails(studentId) {
-  if (!supabaseClient) return;
-
-  const { data: profile } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", studentId)
-    .single();
-
-  const { data: details } = await supabaseClient
-    .from("student_details")
-    .select("class_id, classes(grade, letter, classroom_number)")
-    .eq("profile_id", studentId)
-    .single();
-
-  if (!profile) return;
-
-  const cls = details?.classes;
-  const classLabel = cls ? `${cls.grade}-${cls.letter}` : "—";
-
-  // Show child info in a toast or mini-view
-  showComingSoonMessage(`${profile.full_name} — ${classLabel} класс`);
-}
-
-function getAvatarEmoji(role) {
-  const avatars = {
-    admin: "🛡️",
-    head_teacher: "🎓",
-    teacher: "👨‍🏫",
-    student: "🎒",
-    parent: "👨‍👩‍👧",
-    guest: "👤",
-  };
-  return avatars[role] || "👤";
-}
-
-function getRoleName(role) {
-  const roles = {
-    admin: "Администратор",
-    head_teacher: "Завуч",
-    teacher: "Учитель",
-    student: "Ученик",
-    parent: "Родитель",
-    guest: "Гость",
-  };
-  return roles[role] || "Гость";
-}
 
 // ============================================
 // NAVIGATION & SECTIONS
@@ -1262,19 +460,9 @@ function initializeMainNav() {
     });
   }
 
-  // Header auth buttons
-  const loginBtn = document.getElementById("header-login-btn");
-  if (loginBtn) {
-    loginBtn.addEventListener("click", () => openModal("auth-modal"));
-  }
-
-  const profileBtn = document.getElementById("header-profile-btn");
-  if (profileBtn) {
-    profileBtn.addEventListener("click", () => openDashboard());
-  }
-
   console.log("🧭 Main navigation initialized");
 }
+
 
 // ============================================
 // MODAL WINDOWS
@@ -1283,164 +471,84 @@ function initializeMainNav() {
 function initializeModals() {
   // Students Modal
   const studentsModalClose = document.getElementById("students-modal-close");
-  const studentsModalOverlay = document.getElementById(
-    "students-modal-overlay",
-  );
+  const studentsModalOverlay = document.getElementById("students-modal-overlay");
   const schoolLevelButtons = document.querySelectorAll(".school-level-btn");
 
-  if (studentsModalClose) {
-    studentsModalClose.addEventListener("click", () =>
-      closeModal("students-modal"),
-    );
-  }
-  if (studentsModalOverlay) {
-    studentsModalOverlay.addEventListener("click", () =>
-      closeModal("students-modal"),
-    );
-  }
+  if (studentsModalClose) { studentsModalClose.addEventListener("click", goBackModal); }
+  if (studentsModalOverlay) { studentsModalOverlay.addEventListener("click", goBackModal); }
 
   schoolLevelButtons.forEach((button) => {
     button.addEventListener("click", function () {
-      const level = this.getAttribute("data-level");
-      handleSchoolLevelSelection(level);
+      handleSchoolLevelSelection(this.getAttribute("data-level"));
     });
   });
 
   // Class Selection Modal
   const classSelectionClose = document.getElementById("class-selection-close");
-  const classSelectionOverlay = document.getElementById(
-    "class-selection-overlay",
-  );
-
-  if (classSelectionClose) {
-    classSelectionClose.addEventListener("click", () =>
-      closeModal("class-selection-modal"),
-    );
-  }
-  if (classSelectionOverlay) {
-    classSelectionOverlay.addEventListener("click", () =>
-      closeModal("class-selection-modal"),
-    );
-  }
+  const classSelectionOverlay = document.getElementById("class-selection-overlay");
+  if (classSelectionClose) { classSelectionClose.addEventListener("click", goBackModal); }
+  if (classSelectionOverlay) { classSelectionOverlay.addEventListener("click", goBackModal); }
 
   // Class Details Modal
   const classDetailsClose = document.getElementById("class-details-close");
   const classDetailsOverlay = document.getElementById("class-details-overlay");
-
-  if (classDetailsClose) {
-    classDetailsClose.addEventListener("click", () =>
-      closeModal("class-details-modal"),
-    );
-  }
-  if (classDetailsOverlay) {
-    classDetailsOverlay.addEventListener("click", () =>
-      closeModal("class-details-modal"),
-    );
-  }
+  if (classDetailsClose) { classDetailsClose.addEventListener("click", goBackModal); }
+  if (classDetailsOverlay) { classDetailsOverlay.addEventListener("click", goBackModal); }
 
   // Teachers List Modal
   const teachersListClose = document.getElementById("teachers-list-close");
   const teachersListOverlay = document.getElementById("teachers-list-overlay");
-
-  if (teachersListClose) {
-    teachersListClose.addEventListener("click", () =>
-      closeModal("teachers-list-modal"),
-    );
-  }
-  if (teachersListOverlay) {
-    teachersListOverlay.addEventListener("click", () =>
-      closeModal("teachers-list-modal"),
-    );
-  }
+  if (teachersListClose) { teachersListClose.addEventListener("click", goBackModal); }
+  if (teachersListOverlay) { teachersListOverlay.addEventListener("click", goBackModal); }
 
   // Teacher Profile Modal
   const teacherProfileClose = document.getElementById("teacher-profile-close");
-  const teacherProfileOverlay = document.getElementById(
-    "teacher-profile-overlay",
-  );
+  const teacherProfileOverlay = document.getElementById("teacher-profile-overlay");
+  if (teacherProfileClose) { teacherProfileClose.addEventListener("click", goBackModal); }
+  if (teacherProfileOverlay) { teacherProfileOverlay.addEventListener("click", goBackModal); }
 
-  if (teacherProfileClose) {
-    teacherProfileClose.addEventListener("click", () =>
-      closeModal("teacher-profile-modal"),
-    );
-  }
-  if (teacherProfileOverlay) {
-    teacherProfileOverlay.addEventListener("click", () =>
-      closeModal("teacher-profile-modal"),
-    );
-  }
-
-  // Auth Modal
-  const authModalClose = document.getElementById("auth-modal-close");
-  const authModalOverlay = document.getElementById("auth-modal-overlay");
-
-  if (authModalClose) {
-    authModalClose.addEventListener("click", () => closeModal("auth-modal"));
-  }
-  if (authModalOverlay) {
-    authModalOverlay.addEventListener("click", () => closeModal("auth-modal"));
-  }
-
-  // Dashboard Modal
-  const dashboardClose = document.getElementById("dashboard-modal-close");
-  const dashboardOverlay = document.getElementById("dashboard-modal-overlay");
-
-  if (dashboardClose) {
-    dashboardClose.addEventListener("click", () =>
-      closeModal("dashboard-modal"),
-    );
-  }
-  if (dashboardOverlay) {
-    dashboardOverlay.addEventListener("click", () =>
-      closeModal("dashboard-modal"),
-    );
-  }
-
-  // Auth form submissions
-  const loginForm = document.getElementById("login-form");
-  if (loginForm) {
-    loginForm.addEventListener("submit", handleSignIn);
-  }
-
-  // Регистрация отключена
-  // const registerForm = document.getElementById('register-form');
-  // if (registerForm) {
-  //     registerForm.addEventListener('submit', handleSignUp);
-  // }
-
-  // Role selector change (отключено, т.к. форма регистрации скрыта)
-  // const roleSelect = document.getElementById('reg-role');
-  // if (roleSelect) {
-  //     roleSelect.addEventListener('change', onRoleChange);
-  // }
-
-  // Close on ESC key
+  // ESC key closes any active modal
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
-      const activeModal = document.querySelector(".modal.active");
-      if (activeModal) {
-        closeModal(activeModal.id);
-      }
+      goBackModal();
     }
   });
 }
 
+let modalHistory = [];
+
 function openModal(modalId) {
   const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.add("active");
-    document.body.style.overflow = "hidden";
-    console.log(`📋 Modal opened: ${modalId}`);
+  if (!modal) return;
+  
+  const currentActive = document.querySelector(".modal.active");
+  if (currentActive && currentActive.id !== modalId) {
+    modalHistory.push(currentActive.id);
+    currentActive.classList.remove("active");
+  } else if (!currentActive) {
+    modalHistory = []; // Reset history if opening from clear state
   }
+  
+  modal.classList.add("active");
+  document.body.style.overflow = "hidden";
 }
 
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) {
-    modal.classList.remove("active");
-    document.body.style.overflow = "";
-    console.log(`📋 Modal closed: ${modalId}`);
+function goBackModal() {
+  const currentActive = document.querySelector(".modal.active");
+  if (currentActive) {
+    currentActive.classList.remove("active");
   }
+  
+  if (modalHistory.length > 0) {
+    const prevModalId = modalHistory.pop();
+    const prevModal = document.getElementById(prevModalId);
+    if (prevModal) {
+      prevModal.classList.add("active");
+      return;
+    }
+  }
+  
+  document.body.style.overflow = "";
 }
 
 // ============================================
@@ -1456,35 +564,30 @@ function handleSchoolLevelSelection(level) {
     high: { name: "Старшая школа", grades: [10, 11] },
   };
 
-  closeModal("students-modal");
-
-  setTimeout(() => {
-    const info = levelInfo[level];
-    document.getElementById("class-selection-title").textContent = info.name;
-    generateGradesAccordion(info.grades);
-    openModal("class-selection-modal");
-  }, 300);
+  const info = levelInfo[level];
+  document.getElementById("class-selection-title").textContent = info.name;
+  generateGradesAccordion(info.grades);
+  openModal("class-selection-modal");
 }
+
+// Данные параллелей на уровне модуля — чтобы были видны из generateGradesAccordion и initializeAccordion
+const gradeData = {
+  1:  { letters: ["А", "Б", "В", "Г"] },
+  2:  { letters: ["А", "Б", "В", "Г", "Д"] },
+  3:  { letters: ["А", "В", "Г", "Д"] },
+  4:  { letters: ["А", "Б", "В", "Г", "Д", "И"] },
+  5:  { letters: ["А", "Б", "В", "Г", "Д"] },
+  6:  { letters: ["А", "Б", "В", "Г", "Д"] },
+  7:  { letters: ["А", "Б", "В", "Г", "Д"] },
+  8:  { letters: ["А", "Б", "В", "Г", "Д"] },
+  9:  { letters: ["Б", "В", "Д", "И"] },
+  10: { classes: ["10а-инж", "10в-гум", "10г-ест"] },
+  11: { classes: ["11а-эк", "11б-эк", "11в-гум", "11г-ест"] },
+};
 
 function generateGradesAccordion(grades) {
   const accordion = document.getElementById("grades-accordion");
   accordion.innerHTML = "";
-
-  // Для 1-9 классов: массив букв (Буква добавляется к номеру класса, id = "5а", "9б" ...
-  // Для 10-11 классов: конкретные id классов (совпадают с именем файла без .jpg)
-  const gradeData = {
-    1:  { letters: ["А", "Б", "В", "Г"] },
-    2:  { letters: ["А", "Б", "В", "Г", "Д"] },
-    3:  { letters: ["А", "В", "Г", "Д"] },
-    4:  { letters: ["А", "Б", "В", "Г", "Д", "И"] },
-    5:  { letters: ["А", "Б", "В", "Г", "Д"] },
-    6:  { letters: ["А", "Б", "В", "Г", "Д"] },
-    7:  { letters: ["А", "Б", "В", "Г", "Д"] },
-    8:  { letters: ["А", "Б", "В", "Г", "Д"] },
-    9:  { letters: ["Б", "В", "Д", "И"] },
-    10: { classes: ["10а-инж", "10в-гум", "10г-ест"] },
-    11: { classes: ["11а-эк", "11б-эк", "11в-гум", "11г-ест"] },
-  };
 
   grades.forEach((grade) => {
     const data = gradeData[grade] || {};
@@ -1540,6 +643,27 @@ function generateGradesAccordion(grades) {
 }
 
 
+// Предзагрузка картинок расписания для параллели в фоновом режиме
+// Триггер: пользователь раскрыл аккордеон параллели ("4-е классы" → грузятся 4а.jpg, 4б.jpg, ...)
+function prefetchGradeSchedules(grade, data) {
+  const classIds = data.classes
+    ? data.classes
+    : (data.letters || []).map(l => `${grade} ${l.toLowerCase()}`);
+
+  const fileNames = classIds.map(id => id.replace(/\s+/g, '').toLowerCase());
+
+  fileNames.forEach(fileName => {
+    const img = new Image();
+    img.src = `assets/img/classes/${fileName}.jpg`;
+    // Ошибка загрузки игнорируется — если файла нет, ничего страшного
+    img.onerror = null;
+  });
+
+  console.groupCollapsed(`🖼️ Prefetch: ${grade}-е классы (${fileNames.length} шт.)`);
+  console.log('📦 Файлы:', fileNames.map(f => f + '.jpg').join(', '));
+  console.groupEnd();
+}
+
 function initializeAccordion() {
   const headers = document.querySelectorAll(".accordion-header");
 
@@ -1555,10 +679,17 @@ function initializeAccordion() {
       if (!isActive) {
         this.classList.add("active");
         this.nextElementSibling.classList.add("active");
+
+        // Предзагрузка расписаний для этой параллели
+        const grade = parseInt(this.getAttribute("data-grade"));
+        if (grade && gradeData[grade]) {
+          prefetchGradeSchedules(grade, gradeData[grade]);
+        }
       }
     });
   });
 }
+
 
 function initializeClassButtons() {
   const classButtons = document.querySelectorAll(".class-btn");
@@ -1581,13 +712,9 @@ function openClassDetails(classId) {
     ? `Класс ${classId.replace(" ", "-").toUpperCase()}`
     : `Класс ${classId.toUpperCase()}`;
 
-  closeModal("class-selection-modal");
-
-  setTimeout(() => {
-    document.getElementById("class-details-title").textContent = displayName;
-    loadClassData(classId);
-    openModal("class-details-modal");
-  }, 300);
+  document.getElementById("class-details-title").textContent = displayName;
+  loadClassData(classId);
+  openModal("class-details-modal");
 }
 
 // ============================================
@@ -1602,26 +729,176 @@ async function loadClassData(classId) {
   // Set loading state
   document.getElementById("teacher-name").textContent = "Загрузка...";
   document.getElementById("classroom-number").textContent = "...";
+  const phoneEl = document.getElementById("teacher-phone");
+  if (phoneEl) { phoneEl.style.display = "none"; phoneEl.textContent = ""; phoneEl.href = "#"; }
+  
+  // Clear any dynamic class sections added previously
+  document.querySelectorAll(".dynamic-class-section").forEach(el => el.remove());
 
-  // Для 1-9 классов ("5 а") — ищем учителя по классу ("такой-то класс" в TEACHERS_DATA)
-  // Для старшей школы ("10а-инж") — имя класса нефандартное
-  // Преобразуем classId в формат TEACHERS_DATA ("5 а" → "5-А")
+  // Определяем роль для заголовка: тьютор для 10-11, классный руководитель для 1-9
+  const isHighSchool = /^(10|11)/.test(classId);
+  const roleTitleEl = document.getElementById("teacher-role-title");
+  if (roleTitleEl) {
+    roleTitleEl.textContent = isHighSchool ? "Тьютор" : "Классный руководитель";
+  }
+
+  // Для 1-9 классов ("5 а") — преобразуем "5 а" → "5-А"
+  // Для старшей школы ("10а-инж") — ключ уже готов как есть
   const teacherKey = classId.includes(" ")
     ? classId.replace(/\s+/g, "-").replace(/-([a-zа-я])/g, (_, c) => "-" + c.toUpperCase())
     : classId;
 
   const teacher = getTeacherByClass(teacherKey);
 
-  if (teacher) {
+  if (teacher && teacher.name) {
     document.getElementById("teacher-name").textContent = teacher.name;
     document.getElementById("classroom-number").textContent = teacher.classroom || "—";
+    
+    // Делаем карточку кликабельной
+    const teacherCard = document.getElementById("class-teacher-card");
+    if (teacherCard) {
+      teacherCard.onclick = () => {
+        // Закрываем окно класса (опционально, но лучше чтобы открывалось поверх)
+        // Но так как оба это modal-fullscreen, возможно лучше просто открыть сверху.
+        // teacher-profile-modal не является fullscreen, так что он откроется в виде всплывающего окна нормально:
+        openTeacherProfile(teacher.name);
+      };
+    }
   } else {
     document.getElementById("teacher-name").textContent = "—";
     document.getElementById("classroom-number").textContent = "—";
+    const teacherCard = document.getElementById("class-teacher-card");
+    if (teacherCard) teacherCard.onclick = null;
+  }
+
+  // Inject specific logic for 7-A
+  if (classId === "7 а") {
+    if (phoneEl) {
+      phoneEl.textContent = "📞 +998 99 870 12 41";
+      phoneEl.href = "tel:+998998701241";
+      phoneEl.style.display = "block";
+    }
+    
+    // Add sections for menu, teachers, and students
+    const detailsContainer = document.getElementById("class-details-content");
+    const classData = CLASS_DATA[classId];
+    if (detailsContainer && classData) {
+      // 1. Menu Section
+      if (classData.menu) {
+        const menuSection = document.createElement("div");
+        menuSection.className = "detail-section dynamic-class-section";
+        menuSection.innerHTML = `
+          <h3 class="detail-section-title">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+             Меню столовой
+          </h3>
+          <div style="text-align: center;">
+            <img src="${classData.menu}" alt="Меню" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+          </div>
+        `;
+        detailsContainer.appendChild(menuSection);
+      }
+      
+      // 2. Teachers Section
+      if (classData.teachers && classData.teachers.length > 0) {
+        const teachersHtml = classData.teachers.map((t, idx) => `
+          <div class="teachers-list-row ${idx === classData.teachers.length - 1 ? 'last-row' : ''}">
+            <div class="teachers-list-subject">${t.subject}</div>
+            <div class="teachers-list-names">${t.names}</div>
+          </div>
+        `).join("");
+        
+        const teachersSection = document.createElement("div");
+        teachersSection.className = "detail-section dynamic-class-section";
+        teachersSection.innerHTML = `
+          <h3 class="detail-section-title">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+             Учителя-предметники
+          </h3>
+          <div style="background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
+            ${teachersHtml}
+          </div>
+        `;
+        detailsContainer.appendChild(teachersSection);
+      }
+      
+      // 3. Students Section
+      if (classData.students && classData.students.length > 0) {
+        const studentsHtml = classData.students.map((s, idx) => `
+          <div class="students-list-row ${idx === classData.students.length - 1 ? 'last-row' : ''}">
+            <span class="students-list-index">${idx + 1}.</span>
+            <span class="students-list-name">${s}</span>
+          </div>
+        `).join("");
+        
+        const studentsSection = document.createElement("div");
+        studentsSection.className = "detail-section dynamic-class-section";
+        studentsSection.innerHTML = `
+          <h3 class="detail-section-title">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+             Состав класса
+          </h3>
+          <div style="background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border-color); overflow: hidden;">
+            ${studentsHtml}
+          </div>
+        `;
+        detailsContainer.appendChild(studentsSection);
+      }
+      
+      // 4. Government Section
+      const govSection = document.createElement("div");
+      govSection.className = "detail-section dynamic-class-section";
+      govSection.style.background = "linear-gradient(135deg, #fffcf0 0%, #fff7d6 100%)";
+      govSection.style.border = "1.5px solid #ffe58f";
+      govSection.innerHTML = `
+        <h3 class="detail-section-title" style="color: #d48806;">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 6 6 1-4 4 1 6-6-3-6 3 1-6-4-4 6-1z"></path></svg>
+           Правительство Юналиндия
+        </h3>
+        <div style="display: flex; align-items: center; gap: 15px; padding: 5px;">
+           <div style="font-size: 2.2rem; filter: drop-shadow(0 4px 6px rgba(212, 136, 6, 0.3));">👑</div>
+           <div>
+             <div style="font-size: 1.15rem; font-weight: 700; color: #ad6800; line-height: 1.2;">Шухратова Шахризода</div>
+             <div style="font-size: 0.85rem; color: #d48806; margin-top: 5px; font-weight: 600;">Классный представитель и важная персона в школе</div>
+           </div>
+        </div>
+      `;
+      detailsContainer.appendChild(govSection);
+
+      // 5. Medical Sister Section
+      const medSection = document.createElement("div");
+      medSection.className = "detail-section dynamic-class-section";
+      medSection.innerHTML = `
+        <h3 class="detail-section-title">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+           Медицинский кабинет
+        </h3>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-color); border-radius: 12px; border: 1px solid var(--border-color);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="font-size: 1.6rem; background: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">👩‍⚕️</div>
+            <div>
+              <div style="font-weight: 700; color: var(--primary-dark); font-size: 1rem; line-height: 1.2;">Мед. сестра</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px;">Для связи</div>
+            </div>
+          </div>
+          <div style="position: relative;">
+            <button onclick="const t = document.getElementById('nurse-tooltip'); t.style.display='block'; setTimeout(() => t.style.opacity='1', 10); setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.style.display='none',300); }, 3000);" 
+                    style="width: 32px; height: 32px; border-radius: 50%; background: #ff4d4f; color: white; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 3px 8px rgba(255, 77, 79, 0.4); transition: transform 0.2s;">
+              !
+            </button>
+            <div id="nurse-tooltip" style="display: none; position: absolute; bottom: 120%; right: -5px; background: #262626; color: white; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; width: max-content; max-width: 250px; text-align: center; box-shadow: 0 6px 16px rgba(0,0,0,0.15); opacity: 0; transition: opacity 0.3s ease; z-index: 10;">
+              Это конфиденциальная информация
+            </div>
+          </div>
+        </div>
+      `;
+      detailsContainer.appendChild(medSection);
+    }
   }
 
   // Load schedule image
   loadClassSchedule(classId);
+
 }
 
 /**
@@ -1635,7 +912,7 @@ function loadClassSchedule(classId) {
   // Преобразуем classId в имя файла
   // "5 а" → "5а.jpg", "10а-инж" → "10а-инж.jpg"
   const fileName = classId.replace(/\s+/g, "").toLowerCase();
-  const imagePath = `assets/img/${fileName}.jpg`;
+  const imagePath = `assets/img/classes/${fileName}.jpg`;
 
   scheduleEl.innerHTML = `
     <div class="schedule-image-wrapper" onclick="openScheduleLightbox('${imagePath}', '${classId}')">
@@ -1882,6 +1159,7 @@ function generateSubjectsAccordion() {
     { name: "MBA", icon: "💼" },
     { name: "Английский факультатив", icon: "🔤" },
     { name: "Британский этикет", icon: "🫖" },
+    { name: "Тьютор", icon: "🎓" },
   ];
 
   subjectsData.forEach((subject) => {
@@ -1906,31 +1184,25 @@ function generateSubjectsAccordion() {
   });
 
   initializeSubjectsAccordion();
-
-  // Load teachers from DB for each subject
-  if (supabaseClient) {
-    loadTeachersFromDB();
-  }
+  loadTeachersLocally();
 }
 
+
 /**
- * Load teachers from Supabase grouped by subject
+ * Загрузка учителей из локальных данных TEACHERS_DATA и отображение по предметам
  */
-async function loadTeachersFromDB() {
-  // Вспомогательная функция для получения фамилии
+function loadTeachersLocally() {
   function getSurname(name) {
     return name.split(" ")[0].toLowerCase().replace(/[.]/g, "");
   }
 
-  // Используем данные из TEACHERS_DATA
   const teachersBySubject = {};
 
-  // Группируем учителей по предметам
   TEACHERS_DATA.forEach((teacher) => {
     if (!teachersBySubject[teacher.subject]) {
       teachersBySubject[teacher.subject] = [];
     }
-    // Добавляем только если учителя ещё нет в списке (проверка дубликатов по фамилии)
+    // Добавляем только если учителя ещё нет в списке (uпрощаем дубликаты по фамилии)
     const surname = getSurname(teacher.name);
     const exists = teachersBySubject[teacher.subject].some(
       (t) => getSurname(t.name) === surname,
@@ -1940,90 +1212,9 @@ async function loadTeachersFromDB() {
     }
   });
 
-  // Если нет подключения к Supabase или данные не загрузились, используем локальные данные
-  if (!supabaseClient) {
-    renderTeachersGrids(teachersBySubject);
-    return;
-  }
-
-  try {
-    // Пытаемся загрузить из Supabase
-    const { data: teachers, error } = await supabaseClient
-      .from("profiles")
-      .select("id, full_name, photo_url")
-      .eq("role", "teacher");
-
-    if (error || !teachers || teachers.length === 0) {
-      console.warn("⚠️ Нет данных в БД, используем локальные данные");
-      renderTeachersGrids(teachersBySubject);
-      return;
-    }
-
-    // Load teacher_subjects associations
-    const { data: assignments } = await supabaseClient
-      .from("teacher_subjects")
-      .select("teacher_id, subject_id, subjects(name)");
-
-    // Group teachers by subject name
-    const dbTeachersBySubject = {};
-    if (assignments) {
-      assignments.forEach((a) => {
-        const subjectName = a.subjects?.name;
-        if (subjectName) {
-          if (!dbTeachersBySubject[subjectName]) {
-            dbTeachersBySubject[subjectName] = [];
-          }
-          const teacher = teachers.find((t) => t.id === a.teacher_id);
-          if (teacher) {
-            dbTeachersBySubject[subjectName].push(teacher);
-          }
-        }
-      });
-    }
-
-    // Объединяем данные из БД с локальными
-    const mergedTeachersBySubject = {};
-    const allSubjects = new Set([
-      ...Object.keys(teachersBySubject),
-      ...Object.keys(dbTeachersBySubject),
-    ]);
-
-    allSubjects.forEach((subject) => {
-      mergedTeachersBySubject[subject] = [];
-
-      // Добавляем из БД
-      if (dbTeachersBySubject[subject]) {
-        mergedTeachersBySubject[subject] = dbTeachersBySubject[subject].map(
-          (t) => ({
-            name: t.full_name,
-            class: "",
-            classroom: "",
-            subject: subject,
-            profile_id: t.id,
-          }),
-        );
-      }
-
-      // Добавляем локальные, если нет в БД
-      if (teachersBySubject[subject]) {
-        teachersBySubject[subject].forEach((localTeacher) => {
-          const surname = getSurname(localTeacher.name);
-          const existsInDb = mergedTeachersBySubject[subject].some(
-            (t) => getSurname(t.name) === surname,
-          );
-          if (!existsInDb) {
-            mergedTeachersBySubject[subject].push(localTeacher);
-          }
-        });
-      }
-    });
-
-    renderTeachersGrids(mergedTeachersBySubject);
-  } catch (err) {
-    console.error("❌ Error in loadTeachersFromDB:", err);
-    renderTeachersGrids(teachersBySubject);
-  }
+  renderTeachersGrids(teachersBySubject);
 }
+
 
 /**
  * Render teachers grids for all subjects
@@ -2074,7 +1265,7 @@ function openTeacherProfile(teacherName) {
 
   // Find all classes for this teacher (by surname)
   const allTeacherClasses = getTeachersBySurname(teacherName).filter(
-    (t) => t.class !== "",
+    (t) => t.class && t.class !== "не определён"
   );
 
   // Get unique subjects for this teacher
@@ -2143,57 +1334,42 @@ function initializeSubjectsAccordion() {
 }
 
 // ============================================
-// UTILITY FUNCTIONS
+// CLASS SPECIFIC DATA
 // ============================================
+const CLASS_DATA = {
+  "7 а": {
+    menu: "assets/img/menu7A.jpg",
+    students: [
+      "Абдул-Ахадова Садия", "Абдумаликов Абдуманнон", "Акбаров Фирдавс", "Ботиржонов Абдуллох", 
+      "Гайратуллаева Робия", "Жураев Азизхон", "Касымова Ясмина", "Махмудхановов Хасан", 
+      "Махмудов Мирмахмуд", "Миркомилова Мумтоза", "Муроджонов Имрон", "Набиев Гуломжон", 
+      "Назиржанова Эъзоза", "Плеханов Максим", "Рахимов Диёр", "Саипов Мухаммадяхё", 
+      "Тоирова Омина", "Тураханов Рустам", "Уббиев Айдос", "Халилов Ойбек", "Хамраев Самир"
+    ],
+    teachers: [
+      { subject: "Математика", names: "Шакасымова Эльба, Мамадалиева Э.А., Новикова Александра, Халимова В.А., Расулова Шахиста" },
+      { subject: "История", names: "Дулянова А.Р." },
+      { subject: "Английский язык", names: "Сайдуллаева Н.В., Хабибова Лейла" },
+      { subject: "ИЗО", names: "Нурутдинова Михириниса" },
+      { subject: "Русский язык", names: "Мазитова Лилия" },
+      { subject: "Литература", names: "Мазитова Лилия" },
+      { subject: "География", names: "Мирсаидова Сайера" },
+      { subject: "MBA", names: "Ибрагимова Динара" },
+      { subject: "Английский факультатив", names: "Хабибова Лейла, Ли Ирина" },
+      { subject: "Физика", names: "Худайберганова Дильдора" },
+      { subject: "Зоология", names: "Ильясова Анастасия" },
+      { subject: "Физкультура", names: "Рахимов Акмаль, Фатхуллаев Рахматулла" },
+      { subject: "СТЕМ", names: "Исаев Ислом" },
+      { subject: "Информатика / ИВТ", names: "Белова Елена" },
+      { subject: "Британский этикет", names: "Гурецкая Марина" },
+      { subject: "Эмоциональный интеллект", names: "Синюгина Светлана" },
+      { subject: "Химия", names: "Халмоджаева Дильфуза" },
+      { subject: "Футбол", names: "Галеев Амир" },
+      { subject: "Узбекский язык", names: "Холдарова Манзура" },
+      { subject: "Технология", names: "Мирзаахмедова Мухтабар" },
+      { subject: "ЦК", names: "Галимов Альберт" }
+    ]
+  }
+};
 
-function smoothScrollTo(element) {
-  element.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}
 
-function isInViewport(element) {
-  const rect = element.getBoundingClientRect();
-  return (
-    rect.top >= 0 &&
-    rect.left >= 0 &&
-    rect.bottom <=
-      (window.innerHeight || document.documentElement.clientHeight) &&
-    rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-  );
-}
-
-function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-function trackEvent(category, action, label) {
-  console.log(`📊 Event: ${category} - ${action} - ${label}`);
-}
-
-window.addEventListener(
-  "resize",
-  debounce(function () {
-    console.log("📐 Window resized");
-  }, 250),
-);
-
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = {
-    initializeMainNav,
-    initializeModals,
-    initializeNavigation,
-    initializeAnimations,
-    openModal,
-    closeModal,
-  };
-}
